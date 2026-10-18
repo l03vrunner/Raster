@@ -1,31 +1,31 @@
-# Raster
+# <img src="docs/icon.png" alt="Raster icon" width="64" height="64"> Raster
 
-En liten menylinje-app for macOS. Festede apper vises ved siden av Raster-ikonet. Et klikk åpner appen, henter vinduet frem, eller skjuler den når et vindu allerede er synlig.
+A small macOS menu-bar app. Pinned apps appear beside the Raster icon. A click opens the app, brings its window forward, or hides it when a window is already visible.
 
-Krever macOS 14 eller nyere. Grensesnittet er på norsk.
+Requires macOS 14 or later. The interface is in English.
 
-## Bygg
+## Build
 
-Xcode må være installert, på grunn av `swiftc` og Icon Composer.
+Xcode is required, for `swiftc` and Icon Composer.
 
 ```bash
 ./build.sh
 ```
 
-Det lager `Raster.app` i denne mappen. Appen signeres bare for denne Mac-en, ikke for distribusjon. Første åpning kan macOS stoppe. Høyreklikk appen og velg Åpne.
+That writes `Raster.app` in this folder. The app is signed only for this Mac, not for distribution. macOS may stop the first launch. Right-click the app and choose Open.
 
-`Raster.app/` og `build/` legges ikke i git.
+`Raster.app/` and `build/` are not committed.
 
-## Tilgang
+## Access
 
-Raster har ingen nettverkstilgang og ingen konto.
+Raster has no network access and no account.
 
-- **Dock-listen** leses én gang, første gang det ikke finnes en egen liste, for å hente appene du allerede har festet.
-- **Tilgjengelighet** brukes til å se om et vindu er minimert og til å hente det frem. Uten den tillatelsen åpnes appen likevel, men minimerte vinduer kan ikke hentes frem. Du blir spurt første gang det trengs.
-- **Styring av andre apper** brukes når du klikker eller velger åpne, skjul eller avslutt.
+- **The Dock list** is read once, the first time Raster has no list of its own, to pick up the apps you already pinned.
+- **Accessibility** is used to see whether a window is minimized and to bring it forward. Without that permission the app still opens, but minimized windows cannot be brought forward. You are asked the first time it is needed.
+- **Control of other apps** is used when you click or choose open, hide, or quit.
 
-Det som lagres, blir liggende i Raster sine egne innstillinger på denne Mac-en. Hele forklaringen ligger i appen under Personvern, og i [PrivacyPolicy.txt](PrivacyPolicy.txt).
+What is stored stays in Raster’s own settings on this Mac. The full explanation is in the app under Privacy, and in [PrivacyPolicy.txt](PrivacyPolicy.txt).
 
-## Sikkerhet
+## Security
 
-Se [SECURITY.md](SECURITY.md).
+See [SECURITY.md](SECURITY.md).
