@@ -1,74 +1,74 @@
-Feltene Apple krever i App Store Connect. Valgfrie felter er utelatt.
-Lim inn. Ikke finn på URL-er.
+Fields Apple requires in App Store Connect. Optional fields are left out.
+Paste these in. Do not invent URLs.
 
-Navn
+Name
 Raster
 
-Undertittel
-Apper i menylinjen
+Subtitle
+Apps in the menu bar
 
-Pakke-ID
+Bundle ID
 local.raster
 
 SKU
 raster
 
-Primærkategori
-Verktøy
+Primary category
+Utilities
 
-Primærspråk
-Norsk bokmål
+Primary language
+English
 
-Opphavsrett
-Mangler. Apple krever årstall og juridisk navn, for eksempel «2026 Navn». Ikke fylt inn her.
+Copyright
+Missing. Apple requires the year and a legal name, for example “2026 Name”. Not filled in here.
 
-Personvern-URL
-Mangler. Teksten som skal ligge på siden, er PrivacyPolicy.txt. URL-en må være offentlig. Samme tekst ligger i appen under Personvern.
+Privacy Policy URL
+Missing. The page text is PrivacyPolicy.txt. The URL must be public. The same text is in the app under Privacy.
 
-Støtte-URL
-Mangler. Siden må vise en ekte måte å kontakte deg på: e-post, telefon eller postadresse.
+Support URL
+Missing. The page must show a real way to contact you: email, phone, or postal address.
 
-Innhold fra andre
-Nei. Appen inneholder ikke tredjepartsinnhold.
+Third-party content
+No. The app does not contain third-party content.
 
-Aldersgrense
-Svar nei på foreldrekontroll og aldersbekreftelse.
-Svar nei på brukergenerert innhold, meldingstjeneste, reklame, fri nettilgang og sosiale medier.
-Svar Ingen på alle innholdsfrekvenser, inkludert vold, sex, rus, gambling, konkurranser og lootbokser.
-Det gir 4+. Ikke merk den som for barn.
+Age rating
+Answer no to parental controls and age assurance.
+Answer no to user-generated content, messaging, advertising, unrestricted web access, and social media.
+Answer None for every content frequency, including violence, sex, drugs, gambling, contests, and loot boxes.
+That produces 4+. Do not mark it as made for kids.
 
-App-personvern
-Data samles ikke inn. Ingen sporing. Festede apper lagres bare lokalt og sendes ikke.
+App privacy
+Data is not collected. No tracking. Pinned apps are stored only on the device and are not sent.
 
-Kryptering
-Nei, appen bruker ikke kryptering som er unntatt. Allerede satt i Info.plist.
+Encryption
+No. The app does not use exempt encryption. Already set in Info.plist.
 
-Versjon
+Version
 1.0.0
 
-Beskrivelse
-Raster legger appene dine i menylinjen, så Docken kan være skjult.
+Description
+Raster puts your apps in the menu bar, so the Dock can stay hidden.
 
-Klikk et ikon for å åpne appen. Kjører den allerede, hentes vinduet frem, også når det er minimert eller skjult. Er appen foran og et vindu er synlig, skjuler klikket den.
+Click an icon to open the app. If it is already running, its window is brought forward, including when it is minimized or hidden. If the app is in front and a window is visible, the click hides it.
 
-Appene som ikke får plass, ligger i menyen på Raster-ikonet. Rekkefølgen endres i Innstillinger. Apper som ikke kjører, vises svakere.
+Apps that do not fit are in the menu on the Raster icon. Change the order in Settings. Apps that are not running appear dimmed.
 
-Raster ber om tilgang til Tilgjengelighet for å se om et vindu er minimert. Uten den tilgangen åpnes appen likevel, men minimerte vinduer kan ikke hentes frem. Start ved innlogging er av til du slår det på.
+Raster asks for Accessibility so it can see whether a window is minimized. Without that permission the app still opens, but minimized windows cannot be brought forward. Open at Login stays off until you turn it on.
 
-Ingen konto. Ingenting sendes fra Mac-en.
+No account. Nothing is sent off the Mac.
 
-Nøkkelord
-menylinje,dock,apper,vinduer
+Keywords
+menu bar,dock,apps,windows
 
-Notater til gjennomgangen
+Review notes
 Raster is a Mac menu-bar utility. There is no account, no login, and no in-app purchase.
 
-The pinned apps appear in the menu bar. Left-click launches an app, or brings its windows forward if it is already running, including when a window is minimized or the app is hidden. Left-click again when that app is frontmost and a window is visible to hide it. Right-click for Hide, Quit, Reveal in Finder, and Remove from the bar.
+The pinned apps appear in the menu bar. Left-click launches an app, or brings its windows forward if it is already running, including when a window is minimized or the app is hidden. Left-click again when that app is frontmost and a window is visible to hide it. Right-click for Hide, Quit, Show in Finder, and Remove from Bar.
 
-The Raster icon at the left end of the row opens Raster’s own menu: apps that did not fit, Settings, Privacy, Start at login, and Quit.
+The Raster icon at the left end of the row opens Raster’s own menu: apps that did not fit, Settings, Privacy, Open at Login, and Quit.
 
 Accessibility, under System Settings > Privacy & Security > Accessibility, is optional. It is used only on the review Mac to tell whether a window is minimized and to unminimize it. Without it, a click still launches or activates the app. Nothing read through Accessibility is stored or transmitted.
 
-Start at login is off until it is turned on in the menu or in Settings.
+Open at Login is off until it is turned on in the menu or in Settings.
 
 Privacy is in the Raster menu and states that no data is collected or sent off the device.

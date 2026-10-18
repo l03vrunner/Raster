@@ -1,26 +1,26 @@
-# Sikkerhet
+# Security
 
-Raster kjører bare på Mac-en den er bygget på. Den kontakter ingen tjener, og den har ingen konto.
+Raster runs only on the Mac it is built on. It contacts no server, and it has no account.
 
-## Hva appen kan gjøre
+## What the app can do
 
-Når du har gitt tilgang, kan Raster se vindustilstanden til andre apper og åpne, skjule eller avslutte apper du har festet. Det skjer når du klikker eller velger det i menyen. Gi Tilgjengelighet bare til en `Raster.app` du har bygget selv med `./build.sh`.
+Once you grant access, Raster can see the window state of other apps and open, hide, or quit apps you have pinned. That happens when you click or choose it in the menu. Grant Accessibility only to a `Raster.app` you built yourself with `./build.sh`.
 
-`./build.sh` signerer med en ad hoc-signatur. Appen er ikke notarisert av Apple. Ikke last ned en ferdig `Raster.app` fra noen andre og gi den Tilgjengelighet.
+`./build.sh` signs with an ad hoc signature. The app is not notarized by Apple. Do not download a finished `Raster.app` from someone else and grant it Accessibility.
 
-## Hva som lagres
+## What is stored
 
-Lokalt, i appens egne innstillinger:
+Locally, in the app’s own settings:
 
-- stien til hver festet app, og et bokmerke som peker til den
-- rekkefølgen
+- the path of each pinned app, and a bookmark that points to it
+- the order
 
-Første oppstart uten en slik liste leser `~/Library/Preferences/com.apple.dock.plist` og tar vare på app-stiene derfra. Innholdet i de appene leses ikke.
+The first launch without such a list reads `~/Library/Preferences/com.apple.dock.plist` and keeps the app paths from there. The contents of those apps are not read.
 
-Start ved innlogging lagres av macOS, og bare hvis du slår det på.
+Open at Login is stored by macOS, and only if you turn it on.
 
-Med `RASTER_DEBUG=1` skrives feilsøkingslinjer, inkludert navnene på de festede appene, til `/tmp/raster-status.txt`. Vanlig kjøring gjør ikke det.
+With `RASTER_DEBUG=1`, debug lines, including the names of the pinned apps, are written to `/tmp/raster-status.txt`. A normal launch does not do that.
 
-## Rapportere et problem
+## Reporting a problem
 
-Bruk en privat sikkerhetsrådgivning på dette lageret i GitHub. Ikke legg en sårbarhet i et vanlig issue.
+Use a private security advisory on this GitHub repository. Do not put a vulnerability in a public issue.

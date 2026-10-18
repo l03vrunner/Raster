@@ -72,7 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if appsOn < appSlots.count {
                 show(limit: appsOn)
             }
-            debug("ga opp etter \(passes) forsøk, spor \(appsOn)")
+            debug("gave up after \(passes) passes, slots \(appsOn)")
             return
         }
         if slotsNotReady() {
@@ -82,16 +82,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             } else {
                 measuring = false
-                debug("ga opp, menylinjen ble ikke lagt ut")
+                debug("gave up, the menu bar was not laid out")
             }
             return
         }
         let appsOn = appSlots.filter { self.isOnMenuBar($0.item) }.count
         let rasterOn = rasterItem.map { isOnMenuBar($0) } ?? false
         if passes == 0, let frame = (appSlots.first?.item ?? rasterItem)?.button?.window?.frame {
-            debug(String(format: "første vindu (%.0f,%.0f %.0fx%.0f)", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height))
+            debug(String(format: "first window (%.0f,%.0f %.0fx%.0f)", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height))
         }
-        debug("pass \(passes): \(appsOn)/\(appSlots.count) på linjen, raster \(rasterOn)")
+        debug("pass \(passes): \(appsOn)/\(appSlots.count) on the bar, raster \(rasterOn)")
         if rasterOn && appsOn == appSlots.count {
             if !didGrow, laneMinX > 0, !overflow.isEmpty,
                let rasterX = rasterItem?.button?.window?.frame.minX {
@@ -109,7 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let rasterX = rasterItem?.button?.window?.frame.minX ?? -1
             let leftX = appSlots.last?.item.button?.window?.frame.minX ?? rasterX
             let rightX = appSlots.first?.item.button?.window?.frame.maxX ?? rasterX
-            debug(String(format: "%d i linjen, %d i menyen, x %.0f–%.0f, raster %.0f", appsOn, overflow.count, leftX, rightX, rasterX))
+            debug(String(format: "%d on the bar, %d in the menu, x %.0f–%.0f, raster %.0f", appsOn, overflow.count, leftX, rightX, rasterX))
             debug(store.entries().map(\.name).joined(separator: " · "))
             refreshTooltips()
             return
@@ -167,7 +167,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             button.action = #selector(appClicked(_:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             button.toolTip = entry.name
-            button.setAccessibilityLabel(open ? "\(entry.name), kjører" : entry.name)
+            button.setAccessibilityLabel(open ? "\(entry.name), running" : entry.name)
         }
         return Slot(url: entry.url, item: item)
     }
@@ -191,7 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         readFrame(of: square, tries: 25) { [weak self] frame, screen in
             guard let self else { return }
             self.debug(String(
-                format: "probe (%.0f,%.0f %.0fx%.0f) skjerm %@ topp %.0f aux %@",
+                format: "probe (%.0f,%.0f %.0fx%.0f) screen %@ top %.0f aux %@",
                 frame.origin.x, frame.origin.y, frame.size.width, frame.size.height,
                 screen?.localizedName ?? "nil",
                 screen?.frame.maxY ?? -1,
@@ -240,7 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 let apps = max(0, slots - 1)
                 self.laneMinX = left
                 self.slotWidth = slot
-                self.debug(String(format: "felt %.0f–%.0f, spor %.0f, plass til %d", left, right, slot, apps))
+                self.debug(String(format: "lane %.0f–%.0f, slot %.0f, room for %d", left, right, slot, apps))
                 then(apps)
             } else {
                 self.probeWall(attempts: Array(attempts.dropFirst()), slot: slot, right: right, then: then)
@@ -332,7 +332,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         NSWorkspace.shared.openApplication(at: url, configuration: config) { [weak self] _, error in
             guard let error else { return }
             DispatchQueue.main.async {
-                self?.alert("Klarte ikke å åpne \(Store.displayName(url)).", detail: error.localizedDescription)
+                self?.alert("Could not open \(Store.displayName(url)).", detail: error.localizedDescription)
             }
         }
     }
@@ -341,21 +341,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let running = runningApp(url)
         let menu = NSMenu()
 
-        let hide = NSMenuItem(title: "Skjul", action: #selector(hideApp(_:)), keyEquivalent: "")
+        let hide = NSMenuItem(title: "Hide", action: #selector(hideApp(_:)), keyEquivalent: "")
         hide.target = self
         hide.representedObject = url.path as NSString
         hide.isEnabled = running != nil && running?.isHidden == false
 
-        let quit = NSMenuItem(title: "Avslutt", action: #selector(quitApp(_:)), keyEquivalent: "")
+        let quit = NSMenuItem(title: "Quit", action: #selector(quitApp(_:)), keyEquivalent: "")
         quit.target = self
         quit.representedObject = url.path as NSString
         quit.isEnabled = running != nil
 
-        let finder = NSMenuItem(title: "Vis i Finder", action: #selector(revealApp(_:)), keyEquivalent: "")
+        let finder = NSMenuItem(title: "Show in Finder", action: #selector(revealApp(_:)), keyEquivalent: "")
         finder.target = self
         finder.representedObject = url.path as NSString
 
-        let remove = NSMenuItem(title: "Fjern fra linjen", action: #selector(removeApp(_:)), keyEquivalent: "")
+        let remove = NSMenuItem(title: "Remove from Bar", action: #selector(removeApp(_:)), keyEquivalent: "")
         remove.target = self
         remove.representedObject = url.path as NSString
 
@@ -380,20 +380,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
             menu.addItem(.separator())
         }
-        let settingsItem = NSMenuItem(title: "Innstillinger…", action: #selector(showSettings), keyEquivalent: "")
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: "")
         settingsItem.target = self
         menu.addItem(settingsItem)
 
-        let privacyItem = NSMenuItem(title: "Personvern", action: #selector(showPrivacy), keyEquivalent: "")
+        let privacyItem = NSMenuItem(title: "Privacy", action: #selector(showPrivacy), keyEquivalent: "")
         privacyItem.target = self
         menu.addItem(privacyItem)
 
-        let login = NSMenuItem(title: "Start med macOS", action: #selector(toggleLoginFromMenu), keyEquivalent: "")
+        let login = NSMenuItem(title: "Open at Login", action: #selector(toggleLoginFromMenu), keyEquivalent: "")
         login.target = self
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Avslutt Raster", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit Raster", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     }
 
     @objc private func openOverflow(_ sender: NSMenuItem) {
@@ -469,13 +469,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if shownRunning[key] != open {
                 shownRunning[key] = open
                 slot.item.button?.image = Icons.barIcon(url: slot.url, running: open)
-                slot.item.button?.setAccessibilityLabel(open ? "\(name), kjører" : name)
+                slot.item.button?.setAccessibilityLabel(open ? "\(name), running" : name)
             }
             let tip: String
             if let running, running.isActive, !running.isHidden {
-                tip = "\(name) — klikk for å skjule"
+                tip = "\(name) — click to hide"
             } else if running != nil {
-                tip = "\(name) — kjører"
+                tip = "\(name) — running"
             } else {
                 tip = name
             }
@@ -491,22 +491,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         main.addItem(appItem)
         let appMenu = NSMenu()
         appItem.submenu = appMenu
-        appMenu.addItem(NSMenuItem(title: "Om Raster", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: ""))
+        appMenu.addItem(NSMenuItem(title: "About Raster", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: ""))
         appMenu.addItem(.separator())
-        let settingsItem = NSMenuItem(title: "Innstillinger…", action: #selector(showSettings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
         settingsItem.target = self
         appMenu.addItem(settingsItem)
-        let privacyItem = NSMenuItem(title: "Personvern", action: #selector(showPrivacy), keyEquivalent: "")
+        let privacyItem = NSMenuItem(title: "Privacy", action: #selector(showPrivacy), keyEquivalent: "")
         privacyItem.target = self
         appMenu.addItem(privacyItem)
         appMenu.addItem(.separator())
-        appMenu.addItem(NSMenuItem(title: "Avslutt Raster", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appMenu.addItem(NSMenuItem(title: "Quit Raster", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         let windowItem = NSMenuItem()
         main.addItem(windowItem)
-        let windowMenu = NSMenu(title: "Vindu")
+        let windowMenu = NSMenu(title: "Window")
         windowItem.submenu = windowMenu
-        windowMenu.addItem(NSMenuItem(title: "Lukk", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w"))
+        windowMenu.addItem(NSMenuItem(title: "Close", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w"))
         NSApp.windowsMenu = windowMenu
         NSApp.mainMenu = main
     }
@@ -518,7 +518,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             do {
                 try service.unregister()
             } catch {
-                alert("Klarte ikke å endre start med macOS.", detail: error.localizedDescription)
+                alert("Could not change Open at Login.", detail: error.localizedDescription)
             }
         case .requiresApproval:
             SMAppService.openSystemSettingsLoginItems()
@@ -526,7 +526,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             do {
                 try service.register()
             } catch {
-                alert("Klarte ikke å endre start med macOS.", detail: error.localizedDescription)
+                alert("Could not change Open at Login.", detail: error.localizedDescription)
             }
         }
         settings?.reloadLogin()
@@ -853,7 +853,7 @@ private final class PrivacyWindow: NSObject, NSWindowDelegate {
             defer: false
         )
         super.init()
-        window.title = "Personvern"
+        window.title = "Privacy"
         window.isReleasedWhenClosed = false
         window.delegate = self
         let text = NSTextView()
@@ -884,7 +884,7 @@ private final class PrivacyWindow: NSObject, NSWindowDelegate {
         guard let url = Bundle.main.url(forResource: "PrivacyPolicy", withExtension: "txt"),
               let text = try? String(contentsOf: url, encoding: .utf8),
               !text.isEmpty else {
-            return "Personvernerklæringen mangler i appen."
+            return "The privacy policy is missing from the app."
         }
         return text
     }()
@@ -897,8 +897,8 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
 
     private let window: NSWindow
     private let table = NSTableView()
-    private let removeButton = NSButton(title: "Fjern", target: nil, action: nil)
-    private let loginCheckbox = NSButton(checkboxWithTitle: "Start med macOS", target: nil, action: nil)
+    private let removeButton = NSButton(title: "Remove", target: nil, action: nil)
+    private let loginCheckbox = NSButton(checkboxWithTitle: "Open at Login", target: nil, action: nil)
 
     init(store: Store) {
         self.store = store
@@ -956,7 +956,7 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
         }
         let missing = url == nil
         let name = url.map(Store.displayName) ?? URL(fileURLWithPath: pin.path).deletingPathExtension().lastPathComponent
-        let field = NSTextField(labelWithString: missing ? "\(name) — ikke funnet" : name)
+        let field = NSTextField(labelWithString: missing ? "\(name) — not found" : name)
         field.identifier = NSUserInterfaceItemIdentifier("name")
         field.lineBreakMode = .byTruncatingTail
         field.textColor = missing ? .secondaryLabelColor : .labelColor
@@ -1022,13 +1022,13 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
         scroll.documentView = table
         scroll.translatesAutoresizingMaskIntoConstraints = false
 
-        let blurb = NSTextField(wrappingLabelWithString: "Øverst i listen vises først, fra Raster-ikonet og mot klokken. Det som ikke får plass, ligger i Raster-menyen.")
+        let blurb = NSTextField(wrappingLabelWithString: "The top of the list appears first, from the Raster icon toward the clock. Apps that do not fit are in the Raster menu.")
         blurb.textColor = .secondaryLabelColor
         blurb.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         blurb.preferredMaxLayoutWidth = 400
         blurb.translatesAutoresizingMaskIntoConstraints = false
 
-        let add = NSButton(title: "Legg til…", target: self, action: #selector(addApps))
+        let add = NSButton(title: "Add…", target: self, action: #selector(addApps))
         add.bezelStyle = .rounded
         add.translatesAutoresizingMaskIntoConstraints = false
 
@@ -1079,7 +1079,7 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
         panel.allowsMultipleSelection = true
         panel.allowedContentTypes = [.application]
         panel.treatsFilePackagesAsDirectories = false
-        panel.prompt = "Legg til"
+        panel.prompt = "Add"
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK else { return }

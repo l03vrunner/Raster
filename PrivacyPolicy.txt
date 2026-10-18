@@ -1,13 +1,13 @@
-Personvern for Raster
+Privacy for Raster
 
-Raster samler ikke inn data, og sender ingenting fra Mac-en. Det finnes ingen konto, ingen analyse, ingen reklame og ingen tredjepart.
+Raster does not collect data, and it sends nothing off this Mac. There is no account, no analytics, no advertising, and no third party.
 
-Første gang Raster åpnes, leser den listen over apper i Docken og lagrer den lokalt, så de kan vises i menylinjen. Etter det lagres bare det du selv endrer: hvilke apper som er festet, som sti og et lokalt bokmerke, og rekkefølgen. Innholdet i appene leses ikke.
+The first time Raster opens, it reads the list of apps in the Dock and stores that list locally, so they can appear in the menu bar. After that, it only stores what you change yourself: which apps are pinned, as a path and a local bookmark, and their order. It does not read the contents of those apps.
 
-Tilgjengelighet brukes bare på denne Mac-en, og bare hvis du gir tillatelse. Den brukes til å se om et vindu er minimert, hente det frem, og vite når et klikk skal skjule appen. Ingenting av det lagres.
+Accessibility is used only on this Mac, and only if you allow it. It is used to see whether a window is minimized, to bring it forward, and to know when a click should hide the app. None of that is stored.
 
-Når du ber om det, kan Raster åpne, skjule eller avslutte en festet app. Det skjer bare ved klikk eller valg i menyen.
+When you ask, Raster can open, hide, or quit a pinned app. That happens only from a click or a menu choice.
 
-Start ved innlogging er av til du slår det på. Da er det macOS som lagrer valget.
+Open at Login stays off until you turn it on. macOS stores that choice.
 
-Opplysningene blir liggende til du fjerner appene i Innstillinger eller sletter Raster. Raster har ingen kopi hos utvikleren. Tilgangen til Tilgjengelighet trekkes tilbake i Systeminnstillinger, under Personvern og sikkerhet. Start ved innlogging slås av i Raster eller i Systeminnstillinger.
+The information stays until you remove the apps in Settings or delete Raster. Raster keeps no copy with the developer. Accessibility is revoked in System Settings, under Privacy & Security. Open at Login is turned off in Raster or in System Settings.

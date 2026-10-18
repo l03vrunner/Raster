@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>nb</string>
+	<string>en</string>
 	<key>CFBundleExecutable</key>
 	<string>Raster</string>
 	<key>CFBundleIconFile</key>
@@ -31,7 +31,7 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Raster åpner, skjuler eller avslutter appene du har festet, når du ber om det.</string>
+	<string>Raster opens, hides, or quits the apps you pin, when you ask it to.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSHumanReadableCopyright</key>
