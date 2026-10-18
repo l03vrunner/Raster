@@ -1,0 +1,109 @@
+{
+  "features": [
+    "refractivity"
+  ],
+  "fill": {
+    "automatic-gradient": "extended-srgb:0.021,0.065,0.108,1"
+  },
+  "groups": [
+    {
+      "name": "Selected app",
+      "layers": [
+        {
+          "name": "Blue glass",
+          "image-name": "04-Selected.svg"
+        }
+      ],
+      "lighting": "combined",
+      "specular": true,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.32
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.16
+      },
+      "refractivity": {
+        "enabled": true,
+        "depth": 0.6,
+        "strength": 0.25
+      }
+    },
+    {
+      "name": "App 3",
+      "layers": [
+        {
+          "name": "Frosted glass",
+          "image-name": "03-App.svg"
+        }
+      ],
+      "lighting": "combined",
+      "specular": true,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.32
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
+      },
+      "refractivity": {
+        "enabled": true,
+        "depth": 0.6,
+        "strength": 0.25
+      }
+    },
+    {
+      "name": "App 2",
+      "layers": [
+        {
+          "name": "Frosted glass",
+          "image-name": "02-App.svg"
+        }
+      ],
+      "lighting": "combined",
+      "specular": true,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.32
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
+      },
+      "refractivity": {
+        "enabled": true,
+        "depth": 0.6,
+        "strength": 0.25
+      }
+    },
+    {
+      "name": "App 1",
+      "layers": [
+        {
+          "name": "Frosted glass",
+          "image-name": "01-App.svg"
+        }
+      ],
+      "lighting": "combined",
+      "specular": true,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.32
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
+      },
+      "refractivity": {
+        "enabled": true,
+        "depth": 0.6,
+        "strength": 0.25
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}
