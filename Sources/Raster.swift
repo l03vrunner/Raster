@@ -40,6 +40,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         installMenus()
         watch()
         present()
+        DispatchQueue.main.async {
+            WindowReveal.promptIfNeeded()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -573,19 +576,34 @@ private enum WindowReveal {
         app.unhide()
         switch visibleWindow(app) {
         case .yes:
-            app.activate(options: [.activateAllWindows])
+            bringForward(app)
         case .no(let windows):
             for window in windows where deminiaturize(window) {
                 AXUIElementPerformAction(window, kAXRaiseAction as CFString)
             }
-            app.activate(options: [.activateAllWindows])
+            bringForward(app)
             if windows.isEmpty {
                 sendReopen(app.processIdentifier)
             }
         case .unknown:
             promptForAccess()
-            app.activate(options: [.activateAllWindows])
+            bringForward(app)
         }
+    }
+
+    static func promptIfNeeded() {
+        guard !AXIsProcessTrusted() else { return }
+        promptForAccess()
+    }
+
+    /// Ask macOS to activate this app from Raster, then fall back to Launch Services.
+    private static func bringForward(_ app: NSRunningApplication) {
+        NSApp.yieldActivation(to: app)
+        if app.activate(from: .current, options: [.activateAllWindows]) { return }
+        guard let url = app.bundleURL else { return }
+        let config = NSWorkspace.OpenConfiguration()
+        config.activates = true
+        NSWorkspace.shared.openApplication(at: url, configuration: config)
     }
 
     private enum Windows {
@@ -595,16 +613,17 @@ private enum WindowReveal {
     }
 
     private static func visibleWindow(_ app: NSRunningApplication) -> Windows {
-        guard AXIsProcessTrusted() else { return .unknown }
-        let windows = windows(of: app)
+        guard let windows = windows(of: app) else { return .unknown }
         if windows.contains(where: { !isMinimized($0) }) { return .yes }
         return .no(windows)
     }
 
-    private static func windows(of app: NSRunningApplication) -> [AXUIElement] {
+    /// `nil` means Accessibility did not answer. An empty list means the app has no windows.
+    private static func windows(of app: NSRunningApplication) -> [AXUIElement]? {
+        guard AXIsProcessTrusted() else { return nil }
         let element = AXUIElementCreateApplication(app.processIdentifier)
         var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(element, kAXWindowsAttribute as CFString, &value) == .success else { return [] }
+        guard AXUIElementCopyAttributeValue(element, kAXWindowsAttribute as CFString, &value) == .success else { return nil }
         return value as? [AXUIElement] ?? []
     }
 

@@ -6,7 +6,7 @@ Raster runs only on the Mac it is built on. It contacts no server, and it has no
 
 Once you grant access, Raster can see the window state of other apps and open, hide, or quit apps you have pinned. That happens when you click or choose it in the menu. Grant Accessibility only to a `Raster.app` you built yourself with `./build.sh`.
 
-`./build.sh` signs with an ad hoc signature. The app is not notarized by Apple. Do not download a finished `Raster.app` from someone else and grant it Accessibility.
+`./build.sh` signs with a certificate named Raster Local in this Mac’s login keychain, so a rebuild keeps the same Accessibility permission. The app is not notarized by Apple. Do not download a finished `Raster.app` from someone else and grant it Accessibility.
 
 ## What is stored
 
