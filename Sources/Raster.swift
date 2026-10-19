@@ -24,17 +24,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var overflow: [Entry] = []
     private var measureGeneration = 0
     private var measuring = false
-    private var didGrow = false
-    private var laneMinX: CGFloat = 0
-    private var slotWidth: CGFloat = 36
     private var shownRunning: [String: Bool] = [:]
     private var screenDebounce: DispatchWorkItem?
+    private var collapsed = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        collapsed = UserDefaults.standard.bool(forKey: "rowCollapsed")
         store.load()
         rasterMenu.delegate = self
         let settings = SettingsController(store: store)
-        settings.onChange = { [weak self] in self?.present() }
+        settings.onChange = { [weak self] in self?.present(remeasure: false) }
         settings.onLoginToggle = { [weak self] in self?.toggleLogin() }
         self.settings = settings
         installMenus()
@@ -51,37 +50,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: - Menu bar
 
-    private func present() {
+    /// `remeasure` is for launch, screen changes, and showing the row. Reordering keeps the icons that are already up.
+    private func present(remeasure: Bool = true) {
         measureGeneration += 1
         let generation = measureGeneration
+        if collapsed {
+            measuring = false
+            show(limit: 0)
+            return
+        }
+        let countChanged = appSlots.count + overflow.count != store.entries().count
+        if !remeasure, !countChanged, rasterItem != nil {
+            measuring = false
+            show(limit: appSlots.count)
+            return
+        }
         measuring = true
-        didGrow = false
-        clearItems()
+        ensureRaster()
+        clearApps()
         measureCapacity { [weak self] measured in
             guard let self, generation == self.measureGeneration else { return }
             self.show(limit: measured)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                self.correct(generation: generation, passes: 0)
+                self.settle(generation: generation)
             }
         }
     }
 
-    /// Drops icons the menu bar could not keep, without measuring the lane again.
-    private func correct(generation: Int, passes: Int, waits: Int = 0) {
+    /// If the first layout spilled off the menu bar, drop the extras once. Raster stays where it is.
+    private func settle(generation: Int, waits: Int = 0) {
         guard generation == measureGeneration else { return }
-        if passes >= 40 {
-            measuring = false
-            let appsOn = appSlots.filter { isOnMenuBar($0.item) }.count
-            if appsOn < appSlots.count {
-                show(limit: appsOn)
-            }
-            debug("gave up after \(passes) passes, slots \(appsOn)")
-            return
-        }
         if slotsNotReady() {
             if waits < 25 {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    self.correct(generation: generation, passes: passes, waits: waits + 1)
+                    self.settle(generation: generation, waits: waits + 1)
                 }
             } else {
                 measuring = false
@@ -91,71 +93,77 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         let appsOn = appSlots.filter { self.isOnMenuBar($0.item) }.count
         let rasterOn = rasterItem.map { isOnMenuBar($0) } ?? false
-        if passes == 0, let frame = (appSlots.first?.item ?? rasterItem)?.button?.window?.frame {
-            debug(String(format: "first window (%.0f,%.0f %.0fx%.0f)", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height))
-        }
-        debug("pass \(passes): \(appsOn)/\(appSlots.count) on the bar, raster \(rasterOn)")
         if rasterOn && appsOn == appSlots.count {
-            if !didGrow, laneMinX > 0, !overflow.isEmpty,
-               let rasterX = rasterItem?.button?.window?.frame.minX {
-                let extra = Int(floor((rasterX - laneMinX) / max(slotWidth, 1)))
-                if extra > 0 {
-                    didGrow = true
-                    show(limit: appSlots.count + min(extra, overflow.count))
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                        self.correct(generation: generation, passes: passes + 1)
-                    }
-                    return
-                }
-            }
             measuring = false
             let rasterX = rasterItem?.button?.window?.frame.minX ?? -1
             let leftX = appSlots.last?.item.button?.window?.frame.minX ?? rasterX
-            let rightX = appSlots.first?.item.button?.window?.frame.maxX ?? rasterX
-            debug(String(format: "%d on the bar, %d in the menu, x %.0f–%.0f, raster %.0f", appsOn, overflow.count, leftX, rightX, rasterX))
-            debug(store.entries().map(\.name).joined(separator: " · "))
+            debug(String(format: "%d on the bar, %d in the menu, left %.0f, raster %.0f", appsOn, overflow.count, leftX, rasterX))
             refreshTooltips()
             return
         }
-        var next = appsOn
-        if !rasterOn {
-            next = min(next, max(0, appSlots.count - 1))
+        let next = rasterOn ? appsOn : max(0, min(appsOn, appSlots.count - 1))
+        if next < appSlots.count {
+            show(limit: next)
+            debug("settled to \(next)")
         }
-        show(limit: next)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            self.correct(generation: generation, passes: passes + 1)
-        }
+        measuring = false
     }
 
     private func correctIfNeeded() {
-        guard !measuring else { return }
-        guard !slotsNotReady() else { return }
+        guard !collapsed, !measuring, !slotsNotReady() else { return }
         let rasterOn = rasterItem.map { isOnMenuBar($0) } ?? false
         let appsOn = appSlots.filter { self.isOnMenuBar($0.item) }.count
         guard rasterOn && appsOn == appSlots.count else {
-            correct(generation: measureGeneration, passes: 0)
+            settle(generation: measureGeneration)
             return
         }
     }
 
-    /// First created sits nearest the clock. Raster is created last, so it stays at the left end of the row.
+    /// First created sits nearest the clock. Raster is created first, so it stays at the right end. Apps are created from the end of the list, so the top of the list is on the left.
     private func show(limit: Int) {
-        clearItems()
         let usable = store.entries()
         let count = max(0, min(limit, usable.count))
         let shown = Array(usable.prefix(count))
         overflow = Array(usable.dropFirst(count))
+        ensureRaster()
+        clearApps()
         for entry in shown.reversed() {
             appSlots.append(makeAppItem(entry))
         }
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.menu = rasterMenu
-        item.button?.image = AppGlyph.image
-        item.button?.imageScaling = .scaleProportionallyDown
-        item.button?.toolTip = "Raster"
-        item.button?.setAccessibilityLabel("Raster")
-        rasterItem = item
+        debug("show \(count)")
         refreshTooltips()
+    }
+
+    private func ensureRaster() {
+        let item: NSStatusItem
+        if let rasterItem {
+            item = rasterItem
+        } else {
+            item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+            if let button = item.button {
+                button.image = AppGlyph.image
+                button.imageScaling = .scaleProportionallyDown
+                button.target = self
+                button.action = #selector(rasterClicked(_:))
+                button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            }
+            rasterItem = item
+        }
+        item.button?.toolTip = collapsed ? "Show apps" : "Hide apps"
+        item.button?.setAccessibilityLabel(collapsed ? "Raster, apps hidden" : "Raster")
+    }
+
+    @objc private func rasterClicked(_ sender: NSStatusBarButton) {
+        guard let event = NSApp.currentEvent else { return }
+        if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
+            sender.isHighlighted = true
+            rasterMenu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 2), in: sender)
+            sender.isHighlighted = false
+            return
+        }
+        collapsed.toggle()
+        UserDefaults.standard.set(collapsed, forKey: "rowCollapsed")
+        present()
     }
 
     private func makeAppItem(_ entry: Entry) -> Slot {
@@ -175,34 +183,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return Slot(url: entry.url, item: item)
     }
 
-    private func clearItems() {
+    private func clearApps() {
         for slot in appSlots {
             NSStatusBar.system.removeStatusItem(slot.item)
         }
         appSlots.removeAll()
         shownRunning.removeAll()
+    }
+
+    private func clearItems() {
+        clearApps()
         if let rasterItem {
             NSStatusBar.system.removeStatusItem(rasterItem)
             self.rasterItem = nil
         }
     }
 
+    /// Measures the free space to the left of the Raster icon, which stays on the bar.
     private func measureCapacity(then: @escaping (Int) -> Void) {
-        let square = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        square.button?.image = AppGlyph.image
-        square.button?.alphaValue = 0
-        readFrame(of: square, tries: 25) { [weak self] frame, screen in
+        ensureRaster()
+        guard let rasterItem else {
+            then(12)
+            return
+        }
+        readFrame(of: rasterItem, tries: 25, requireOnBar: true) { [weak self] frame, screen in
             guard let self else { return }
             self.debug(String(
-                format: "probe (%.0f,%.0f %.0fx%.0f) screen %@ top %.0f aux %@",
+                format: "raster (%.0f,%.0f %.0fx%.0f) screen %@ top %.0f aux %@",
                 frame.origin.x, frame.origin.y, frame.size.width, frame.size.height,
                 screen?.localizedName ?? "nil",
                 screen?.frame.maxY ?? -1,
                 String(describing: screen?.auxiliaryTopRightArea)
             ))
             let slot = max(frame.width, 24)
-            let right = frame.maxX
-            NSStatusBar.system.removeStatusItem(square)
+            let right = frame.minX
             guard self.isOnMenuBar(frame, screen: screen), right > slot else {
                 then(12)
                 return
@@ -212,15 +226,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    private func readFrame(of item: NSStatusItem, tries: Int, then: @escaping (NSRect, NSScreen?) -> Void) {
+    private func readFrame(of item: NSStatusItem, tries: Int, requireOnBar: Bool = false, then: @escaping (NSRect, NSScreen?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             let frame = item.button?.window?.frame ?? .zero
             let screen = item.button?.window?.screen ?? NSScreen.main
-            if frame.height > 2 || tries <= 0 || self == nil {
+            let placed = frame.height > 2 && (!requireOnBar || (self?.isOnMenuBar(frame, screen: screen) ?? false))
+            if placed || tries <= 0 || self == nil {
                 then(frame, screen)
             } else {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    self?.readFrame(of: item, tries: tries - 1, then: then)
+                    self?.readFrame(of: item, tries: tries - 1, requireOnBar: requireOnBar, then: then)
                 }
             }
         }
@@ -238,11 +253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSStatusBar.system.removeStatusItem(wide)
             if self.isOnMenuBar(frame, screen: screen) {
                 let left = frame.minX
-                let usable = max(0, right - left - 8)
-                let slots = Int(floor(usable / slot))
-                let apps = max(0, slots - 1)
-                self.laneMinX = left
-                self.slotWidth = slot
+                let apps = max(0, Int(floor((right - left - 4) / slot)))
                 self.debug(String(format: "lane %.0f–%.0f, slot %.0f, room for %d", left, right, slot, apps))
                 then(apps)
             } else {
@@ -920,7 +931,7 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
     init(store: Store) {
         self.store = store
         window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 440, height: 520),
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 624),
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
@@ -962,22 +973,24 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
         guard store.pinned.indices.contains(row) else { return nil }
         let pin = store.pinned[row]
         let url = store.resolve(pin)
-        if tableColumn?.identifier.rawValue == "icon" {
-            let image = NSImageView()
-            image.identifier = NSUserInterfaceItemIdentifier("icon")
-            image.imageScaling = .scaleProportionallyDown
-            if let url {
-                image.image = Icons.barIcon(url: url)
-            }
-            return image
-        }
         let missing = url == nil
         let name = url.map(Store.displayName) ?? URL(fileURLWithPath: pin.path).deletingPathExtension().lastPathComponent
+        let width = tableColumn?.width ?? tableView.bounds.width
+        let height = tableView.rowHeight
+        let rowView = NSView(frame: NSRect(x: 0, y: 0, width: width, height: height))
+        let icon = NSImageView(frame: NSRect(x: 4, y: (height - 20) / 2, width: 20, height: 20))
+        icon.imageScaling = .scaleProportionallyDown
+        if let url {
+            icon.image = Icons.barIcon(url: url)
+        }
         let field = NSTextField(labelWithString: missing ? "\(name) — not found" : name)
-        field.identifier = NSUserInterfaceItemIdentifier("name")
+        field.frame = NSRect(x: 32, y: (height - 18) / 2, width: width - 40, height: 18)
         field.lineBreakMode = .byTruncatingTail
         field.textColor = missing ? .secondaryLabelColor : .labelColor
-        return field
+        field.autoresizingMask = [.width]
+        rowView.addSubview(icon)
+        rowView.addSubview(field)
+        return rowView
     }
 
     func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> (any NSPasteboardWriting)? {
@@ -989,9 +1002,27 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
     func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableView.DropOperation) -> NSDragOperation {
         guard info.draggingSource as AnyObject === tableView else { return [] }
         if dropOperation == .on {
-            tableView.setDropRow(row, dropOperation: .above)
+            let rect = tableView.rect(ofRow: row)
+            let location = tableView.convert(info.draggingLocation, from: nil)
+            let after = location.y > rect.midY
+            tableView.setDropRow(after ? row + 1 : row, dropOperation: .above)
         }
         return .move
+    }
+
+    func tableView(_ tableView: NSTableView, draggingSession session: NSDraggingSession, willBeginAt screenPoint: NSPoint, forRowIndexes rowIndexes: IndexSet) {
+        session.animatesToStartingPositionsOnCancelOrFail = true
+        let rows = Array(rowIndexes)
+        session.enumerateDraggingItems(options: [], for: tableView, classes: [NSPasteboardItem.self], searchOptions: [:]) { draggingItem, index, _ in
+            guard rows.indices.contains(index) else { return }
+            let row = rows[index]
+            let rect = tableView.frameOfCell(atColumn: 0, row: row)
+            if let cell = tableView.view(atColumn: 0, row: row, makeIfNecessary: false) {
+                draggingItem.setDraggingFrame(rect, contents: cell)
+            } else {
+                draggingItem.draggingFrame = rect
+            }
+        }
     }
 
     func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
@@ -1000,11 +1031,15 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
         var to = row
         if from < to { to -= 1 }
         to = max(0, min(to, store.pinned.count - 1))
-        if from != to {
-            store.move(from: from, to: to)
-            onChange()
+        guard from != to else { return true }
+        store.move(from: from, to: to)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.12
+            table.beginUpdates()
+            table.moveRow(at: from, to: to)
+            table.endUpdates()
         }
-        table.reloadData()
+        onChange()
         return true
     }
 
@@ -1013,16 +1048,10 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
     }
 
     private func build() {
-        let iconColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("icon"))
-        iconColumn.width = 36
-        iconColumn.minWidth = 36
-        iconColumn.maxWidth = 36
-        iconColumn.resizingMask = []
-        let nameColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name"))
-        nameColumn.title = "App"
-        nameColumn.resizingMask = .autoresizingMask
-        table.addTableColumn(iconColumn)
-        table.addTableColumn(nameColumn)
+        let appColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("app"))
+        appColumn.title = "App"
+        appColumn.resizingMask = .autoresizingMask
+        table.addTableColumn(appColumn)
         table.headerView = nil
         table.rowHeight = 28
         table.intercellSpacing = NSSize(width: 0, height: 6)
@@ -1030,7 +1059,7 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
         table.delegate = self
         table.allowsMultipleSelection = true
         table.registerForDraggedTypes([.string])
-        table.draggingDestinationFeedbackStyle = .gap
+        table.draggingDestinationFeedbackStyle = .regular
         table.style = .inset
 
         let scroll = NSScrollView()
@@ -1039,7 +1068,7 @@ private final class SettingsController: NSObject, NSTableViewDataSource, NSTable
         scroll.documentView = table
         scroll.translatesAutoresizingMaskIntoConstraints = false
 
-        let blurb = NSTextField(wrappingLabelWithString: "The top of the list appears first, from the Raster icon toward the clock. Apps that do not fit are in the Raster menu.")
+        let blurb = NSTextField(wrappingLabelWithString: "The top of the list is on the left. Further apps extend toward the Raster icon. Apps that do not fit are in the Raster menu.")
         blurb.textColor = .secondaryLabelColor
         blurb.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         blurb.preferredMaxLayoutWidth = 400
