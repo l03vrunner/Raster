@@ -427,13 +427,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func showSettings() {
-        NSApp.setActivationPolicy(.regular)
         settings?.show()
         NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func showPrivacy() {
-        NSApp.setActivationPolicy(.regular)
         PrivacyWindow.show()
         NSApp.activate(ignoringOtherApps: true)
     }
